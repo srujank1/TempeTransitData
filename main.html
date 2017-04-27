@@ -1,0 +1,1741 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tempe Bus Viz</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.0.1/dist/leaflet-src.js"></script>
+    
+    <script src='https://unpkg.com/leaflet.gridlayer.googlemutant@latest/Leaflet.GoogleMutant.js'></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDKmFmweewOyonOLBJ40ceiWDBmokCgSW0" async defer></script>
+
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <script src="https://dc-js.github.io/dc.js/js/crossfilter.js"></script>
+    <script src="https://dc-js.github.io/dc.js/js/dc.js"></script>
+    <link rel="stylesheet" type="text/css" href="http://dc-js.github.io/dc.js/css/dc.css">
+    
+    <link rel="stylesheet" type="text/css" href="main.css">
+
+</head>
+<body>
+<div id="buttons" style="width:100%">
+<button id="UniversityButton" class="button button1">University</button>
+<button id="SouthernButton" class="button button2">Southern</button>
+<button id="BroadwayButton" class="button button3">Broadway</button>
+<button id="RioSaladoButton" class="button button4">48th Street/Rio Salado</button>
+<button id="HardyButton" class="button button5">Hardy/Guadalupe</button>
+<button id="PriestButton" class="button button6">Priest Drive</button>
+<button id="ScottsdaleButton" class="button button7">Scottsdale Rd/Rural</button>
+<button id="HaydenButton" class="button button8">Hayden/McClintock</button>
+<button id="MillButton" class="button button9">Mill/Kyrene 5</button>
+<button id="KyreneButton" class="button button10">Mill/Kyrene 6</button>
+</div>
+
+<div class="wrapper">
+    <div id= "otherview" class="div2"></div>
+    <div id= "trafficmap" class="div3"  style="display: none">
+        <div style="width: 100%; display:table;">
+            <div style="display:table-row">
+                <div class="dropdown" id="dayDrop" style="float:left; padding:1px;">
+                    <button id="dayButton" onclick="chooseDay()" class="button button1" style="width:130px;">Select Day</button>
+                    <div id="days" class="dropdown-content">
+                        <a id="Sun" href="#" onclick="selectDay(this)">Sunday</a>
+                        <a id="Mon" href="#" onclick="selectDay(this)">Monday</a>
+                        <a id="Tues" href="#" onclick="selectDay(this)">Tuesday</a>
+                        <a id="Wed" href="#" onclick="selectDay(this)">Wednesday</a>
+                        <a id="Thur" href="#" onclick="selectDay(this)">Thursday</a>
+                        <a id="Fri" href="#" onclick="selectDay(this)">Friday</a>
+                        <a id="Sat" href="#" onclick="selectDay(this)">Saturday</a>
+                    </div>
+                </div>
+
+                <div class="dropdown" id="timeDrop" style="float:left; padding:1px;">
+                    <button id="timeButton" onclick="chooseTime()" class="button button2" style="width:130px;">Select Time</button>
+                    <div id="times" class="dropdown-content">
+                        <a id="6am" href="#" onclick="selectTime(this)">6am</a>
+                        <a id="7am" href="#" onclick="selectTime(this)">7am</a>
+                        <a id="8am" href="#" onclick="selectTime(this)">8am</a>
+                        <a id="9am" href="#" onclick="selectTime(this)">9am</a>
+                        <a id="10am" href="#" onclick="selectTime(this)">10am</a>
+                        <a id="11am" href="#" onclick="selectTime(this)">11am</a>
+                        <a id="12pm" href="#" onclick="selectTime(this)">12pm</a>
+                        <a id="1pm" href="#" onclick="selectTime(this)">1pm</a>
+                        <a id="2pm" href="#" onclick="selectTime(this)">2pm</a>
+                        <a id="3pm" href="#" onclick="selectTime(this)">3pm</a>
+                        <a id="4pm" href="#" onclick="selectTime(this)">4pm</a>
+                        <a id="5pm" href="#" onclick="selectTime(this)">5pm</a>
+                        <a id="6pm" href="#" onclick="selectTime(this)">6pm</a>
+                        <a id="7pm" href="#" onclick="selectTime(this)">7pm</a>
+                    </div>
+                </div>
+
+                <div class="dropdown" id="eventDrop" style="float:left; padding:1px;">
+                    <button id="eventButton" onclick="chooseEvent()" class="button button3" >Select Event</button>
+                    <div id="events" class="dropdown-content">
+                        <a id="event1" href="#" onclick="selectEvent(this)">Tempe Festival of the Arts</a>
+                        <a id="event2" href="#" onclick="selectEvent(this)">PF Chang's Rock n' Roll of Arizona</a>
+                        <a id="event3" href="#" onclick="selectEvent(this)">4th of July Celebration</a>
+                    </div>
+                </div>
+                <div class="dropdown" id="topClosebutton" style="float:left; padding:1px;">
+                 <button class="button button4" id="CloseButton">Close</button>
+                </div>
+
+            </div>
+        </div>
+        <div style="width: 100%; display:table;">
+            <div id="googleMap" style="padding:1px; width: 100%;"></div>
+        </div>
+    </div>
+    <div id= "mapid" class="div1"></div>
+</div>
+
+<script>
+    //For the Traffic HTML buttons
+
+    //Add leaflet map
+    var map = L.map('mapid').setView([33.410552, -111.929820],13);
+
+    //Make a Google Map Layer
+    var roadMutant = L.gridLayer.googleMutant({
+        maxZoom: 24,
+        type:'roadmap'
+    }).addTo(map);
+
+    //Buttons---------------------------------------------------
+    $("#SouthernButton").click(function () {
+        MoreInfo("Southern");
+    });
+
+    $("#UniversityButton").click(function () {
+        MoreInfo("University");
+    });
+
+    $("#BroadwayButton").click(function () {
+        MoreInfo("Broadway");
+    });
+
+    $("#RioSaladoButton").click(function () {
+        MoreInfo("48th Street/Rio Salado");
+    });
+
+    $("#HardyButton").click(function () {
+        MoreInfo("Hardy/Guadalupe");
+    });
+
+    $("#ScottsdaleButton").click(function () {
+        MoreInfo("Scottsdale Rd/Rural");
+    });
+    $("#HaydenButton").click(function () {
+        MoreInfo("Hayden/McClintock");
+    });
+
+    $("#MillButton").click(function () {
+        MoreInfo("Mill/Kyrene 5");
+    });
+    $("#KyreneButton").click(function () {
+        MoreInfo("Mill/Kyrene 6");
+    });
+
+    $("#PriestButton").click(function () {
+        MoreInfo("Priest Drive");
+    });
+    //----------------------------------------------------------
+
+    // Add the svg layer
+    var svgLayer = L.svg();
+    svgLayer.addTo(map);
+
+    var svg = d3.select("#mapid").select("svg");
+        svg.attr("class", "map-display");
+        svg.attr("pointer-events","all");
+
+    var g = d3.select("#mapid").select("svg").select('g');
+
+    // This is a line function
+    var lineFunction = d3.svg.line()
+        .x(function(d) { return map.latLngToLayerPoint(d).x; })
+        .y(function(d) { return map.latLngToLayerPoint(d).y; })
+        .interpolate("linear");
+
+    // Global vars
+    var pathDict = {};
+    var lines = {};
+    var colors = {"Southern": '#a6cee3',"University":'#1f78b4', "Broadway": '#b2df8a', "48th Street/Rio Salado": '#33a02c',
+        "Hardy/Guadalupe" : '#fb9a99', "Priest Drive" :'#e31a1c', "Mill/Kyrene 6": '#fdbf6f', "Mill/Kyrene 5": '#cab2d6',
+        "Hayden/McClintock": '#6a3d9a', "Scottsdale Rd/Rural": '#ff7f00'};
+    var routeNumbers = {"Southern": "61", "University": "30",  "Broadway": "45", "48th Street/Rio Salado": "48",
+        "Hardy/Guadalupe" : '62', "Priest Drive" : "56", "Mill/Kyrene 6": "66", "Mill/Kyrene 5": "65", "Hayden/McClintock": "81",
+        "Scottsdale Rd/Rural": "72"};
+    var routesFilename = "paths.json";
+
+    // Store the routes
+    d3.json(routesFilename, function (data) {
+        data.features.forEach(function(d) {
+
+            // If data is empty for that route
+            if (pathDict[d.attributes.ROUTE] == null)
+            {
+                pathDict[d.attributes.ROUTE] = [];
+            }
+            d.geometry.paths.forEach(function(paths) {
+
+                var coordinates = [];
+                paths.forEach(function(cor) {
+                    coordinates.push(new L.LatLng(cor[1], cor[0]));
+                });
+                if (coordinates != null) {
+                    pathDict[d.attributes.ROUTE].push(coordinates)
+                }
+            });
+        });
+        display_map();
+    });
+    
+
+    // This display's the paths on the map
+    function display_map() {
+
+        extraDisplay  = false;
+        displayKey = "";
+
+        Object.keys(pathDict).forEach(function(key) {
+            var feature = [];
+            pathDict[key].forEach(function(d) {
+                var add_line = g.append("path")
+                    .attr("d",lineFunction(d))
+                    .attr("stroke",colors[key])
+                    .attr("stroke-width",3.5)
+                    .attr("fill", "none")
+                    .attr("class", key)
+                    .style({opacity:'0.4'})
+                    .on('mouseover',function(){
+                        lines[key].forEach(function(d){
+                            d.style({opacity:'1.0'});
+                        });
+                    })
+                    .on('mouseout',function(){
+                        lines[key].forEach(function(d){
+                            d.style({opacity:'0.4'});
+                        });
+                    })
+                    .on("click", function(){
+                        MoreInfo(d3.select(this).attr('class'));
+                        update();
+                    })
+                    .attr("pointer-events"," ");
+
+                feature.push(add_line);
+            });
+
+            lines[key] = feature;
+        });
+
+        map.on("zoom", update);
+        update();
+
+        function update(){
+            Object.keys(lines).forEach(function(key) {
+                for(var i =0; i < lines[key].length; i++)
+                {
+                    lines[key][i].attr("d", lineFunction(pathDict[key][i]))
+                }
+            });
+        }
+    }
+
+    var extraDisplay  = false;
+    var displayKey = "";
+    var update = false;
+
+    function MoreInfo(current_key) {
+        // Change the routes
+        if ((extraDisplay == false && current_key != displayKey) || (extraDisplay == true && displayKey != current_key)) {
+            Object.keys(lines).forEach(function (key) {
+                if (current_key != key) {
+                    for (var i = 0; i < lines[key].length; i++) {
+                        lines[key][i].style({opacity: '0.1'});
+
+                        lines[key][i].on('mouseover', function () {
+                            d3.select(this).style({opacity: '0.1'})
+                        });
+
+                        lines[key][i].on('mouseout', function () {
+                            d3.select(this).style({opacity: '0.1'})
+                        });
+                        
+                        lines[key][i].on('click', function () {
+                            
+                        });
+
+                    }
+                }
+                else {
+                    for (var i = 0; i < lines[key].length; i++) {
+                        lines[key][i].style({opacity: '1.0'});
+
+                        lines[key][i].on('mouseover', function () {
+                            lines[key].forEach(function (d) {
+                                d.style({opacity: '0.7'});
+                            });
+                        });
+
+                        lines[key][i].on('mouseout', function () {
+                            lines[key].forEach(function (d) {
+                                d.style({opacity: '1.0'});
+                            });
+                        });
+                    }
+                }
+            });
+        }
+        else if (extraDisplay == true && displayKey == current_key) {
+            Object.keys(lines).forEach(function (key) {
+                for (var i = 0; i < lines[key].length; i++) {
+                    lines[key][i].style({opacity: '0.4'});
+
+                    lines[key][i].on('mouseover', function () {
+                        lines[key].forEach(function (d) {
+                            d.style({opacity: '1.0'});
+                        });
+                    });
+                    lines[key][i].on('mouseout', function () {
+                        lines[key].forEach(function (d) {
+                            d.style({opacity: '0.4'});
+                        });
+                    });
+                    
+                    lines[key][i].on("click", function(){
+                        MoreInfo(d3.select(this).attr('class'));
+                    });
+                }
+            });
+        }
+
+        // ADD the SVG
+        if (extraDisplay == false && displayKey == "") {
+            //Change the state
+            extraDisplay = true;
+            displayKey = current_key;
+
+            //Display the main Info
+            displaySecondMain(current_key);
+
+            //Display the bus stops
+            displayBusStops(current_key);
+
+            //Display the current bus
+            displayCurrentBus(current_key);
+            updateCurrentBus(current_key);
+
+            //If schedule is there
+            if(displayScheduleCurrent == true)
+            {
+                $("#otherview").empty();
+                displaySchedule(current_key);
+            }
+            
+            if(displayTrafficCurrent == true)
+            {
+                map.invalidateSize();
+                secondDisplay.style("display", "none");
+            }
+            
+
+        }
+        else if (displayKey != current_key) {
+            //Change the state
+            displayKey = current_key;
+
+            //Update the the main display
+            updateSecondMain(current_key);
+
+            // Remove the Routes
+            busStops.forEach(function (data) {
+                data[0].remove();
+            });
+            busStops = [];
+
+            //Add new Stops
+            displayBusStops(current_key);
+
+            window.clearInterval(intervalId);
+            currestBuses.forEach(function (data) {
+                data[0].remove();
+            });
+            currestBuses = [];
+
+            //Display the current bus
+            displayCurrentBus(current_key);
+            updateCurrentBus(current_key);
+        }
+        else {
+            //Remove the second display
+            secondDisplay.remove();
+
+            // Remove the Routes
+            busStops.forEach(function (data) {
+                data[0].remove();
+            });
+            busStops = [];
+
+            window.clearInterval(intervalId);
+
+
+            currestBuses.forEach(function (data) {
+                data[0].remove();
+            });
+            currestBuses = [];
+
+            if(BarDisplay != null){
+                BarDisplay.remove();
+            }
+
+            extraDisplay = false;
+            displayKey = "";
+        }
+
+    }    
+
+    var Routes = {"Southern":{
+        "Route": "Southern",
+        "Weekday" : 4951.75,
+        "Weekend": 2570,
+        "WeekdayLevel" : "High",
+        "WeekendLevel" : "High"
+    }, "University" :{
+        "Route": "University",
+        "Weekday" : 2472.75,
+        "Weekend": 717.25,
+        "WeekdayLevel" : "Medium",
+        "WeekendLevel" : "Low"
+    }, "Broadway" :{
+        "Route": "Broadway",
+        "Weekday" : 3734,
+        "Weekend": 1486,
+        "WeekdayLevel" : "High",
+        "WeekendLevel" : "High"
+    }, "48th Street/Rio Salado" :{
+        "Route": "48th Street/Rio Salado",
+        "Weekday" : 966.25,
+        "Weekend": 568.6,
+        "WeekdayLevel" : "Low",
+        "WeekendLevel" : "Low"
+    }, "Hardy/Guadalupe" :{
+        "Route": "Hardy/Guadalupe",
+        "Weekday" : 2626,
+        "Weekend": 844.5,
+        "WeekdayLevel" : "Medium",
+        "WeekendLevel" : "Medium"
+    }, "Priest Drive" :{
+        "Route": "Priest Drive",
+        "Weekday" : 4112,
+        "Weekend": 1502,
+        "WeekdayLevel" : "High",
+        "WeekendLevel" : "High"
+    }, "Mill/Kyrene 6" :{
+        "Route": "Mill/Kyrene 6",
+        "Weekday" : 1660,
+        "Weekend": 750.25,
+        "WeekdayLevel" : "Low",
+        "WeekendLevel" : "Medium"
+    }, "Mill/Kyrene 5" :{
+        "Route": "Mill/Kyrene 5",
+        "Weekday" : 1677.5,
+        "Weekend": 710.5,
+        "WeekdayLevel" : "Low",
+        "WeekendLevel" : "Low"
+    }, "Hayden/McClintock" :{
+        "Route": "Hayden/McClintock",
+        "Weekday" : 2433.25,
+        "Weekend": 1258,
+        "WeekdayLevel" : "Medium",
+        "WeekendLevel" : "Medium"
+    }, "Scottsdale Rd/Rural" :{
+        "Route": "Scottsdale Rd/Rural",
+        "Weekday" : 3773.25,
+        "Weekend": 1915,
+        "WeekdayLevel" : "High",
+        "WeekendLevel" : "High"
+    }};
+
+    var g2 = svg.append("g").attr("id", "second-display");
+    var secondDisplay;
+
+    // Values in the second display
+    var heading;
+
+    //Var's for passengers Chart
+    var passengersg;
+    var passengersChart;
+    var xf_chart;
+    var dim_chart;
+    var group_chart;
+
+    //Var's for line Chart
+    var timeg;
+    var timeChart;
+    var timeColors =  {"Eastbound": '#e41a1c',"WestBound":'#377eb8', "Southbound": '#4daf4a', "Northbound": '#984ea3'};
+
+    //Var ridership level
+    var weekdaylevel;
+    var weekendlevel;
+
+
+    function displaySecondMain(current_key){
+
+        //Append svg
+        secondDisplay = g2.append("svg")
+            .attr("class", "second-display")
+            .attr("width",  350)
+            .attr("height", 580);
+
+        secondDisplay.append("rect")
+            .attr("x", 0)
+            .attr("y", 0)
+            .attr("width", 350)
+            .attr("height", 580)
+            .attr("fill", "white")
+            .attr("fill-opacity", 0.7)
+            .attr("stroke-width", 1)
+            .attr("stroke", "black");
+
+        // Update the heading
+        heading = secondDisplay.append("text")
+            .attr("x", 350/2 )
+            .attr("y", 45)
+            .attr("id", "Heading")
+            .attr("stroke-width", "1")
+            .attr("font-family", "Arial")
+            .attr("font-size", "38")
+            .attr("fill",'#000000')
+            .attr("text-anchor", "middle")
+            .text(current_key);
+
+        // Adds a separator
+        secondDisplay.append("line")
+            .style("stroke", "black")
+            .attr("x1", 20)
+            .attr("y1", 60)
+            .attr("x2", 330)
+            .attr("y2", 60);
+
+        // Adds a separator
+        secondDisplay.append("line")
+            .style("stroke", "black")
+            .attr("x1", 20)
+            .attr("y1", 65)
+            .attr("x2", 330)
+            .attr("y2", 65);
+
+        // Add the legend
+        secondDisplay.append("rect")
+            .attr("x", 10)
+            .attr("y", 480)
+            .attr("width", 260)
+            .attr("height", 80)
+            .style("fill", "white")
+            .style("fill-opacity", 0.7)
+            .style("stroke-width", 1)
+            .style("stroke", "black");
+
+        // Add info about current routes
+        var data = [{"Day": "Weekday", "Value": Routes[current_key].Weekday},
+            {"Day": "Weekend", "Value": Routes[current_key].Weekend}];
+
+        passengersg = secondDisplay.append("g").attr("id", "passfullbar");
+        passengersg.attr("transform", "translate(" +  10 + "," + 100 +")");
+        passengersChart = dc.rowChart("#passfullbar");
+
+        xf_chart  = crossfilter(data);
+        dim_chart = xf_chart.dimension(function (d) {
+            return d["Day"]; });
+        group_chart = dim_chart.group().reduceSum(function (d) {
+            return d["Value"]; });
+
+        passengersChart
+            .width(330)
+            .height(80)
+            .margins({top: 10, left: 10, right: 10, bottom: 20})
+            .ordering(function(d) { return -d.value; })
+            .dimension(dim_chart)
+            .group(group_chart)
+            .elasticX(false)
+            .colors(d3.scale.ordinal().domain(["Weekday", "Weekend"])
+                .range(["#377eb8", "#4daf4a"]))
+            .x(d3.scale.linear().domain([0,4800]).range([0, 310]))
+            .xAxis().ticks(5);
+
+        passengersChart.render();
+
+        secondDisplay
+            .append("text")
+            .attr("x", passengersChart.width() / 2)
+            .attr("y", passengersChart.height()+108)
+            .text("# of people");
+
+        // Add title to chart
+        secondDisplay.append("text")
+            .attr("x", 350/2 )
+            .attr("y", 95)
+            .attr("id", "Heading")
+            .style("stroke-width", "1")
+            .style("font-family", "Arial")
+            .style("font-size", "16")
+            .style("fill",'#000000')
+            .style("text-anchor", "middle")
+            .text("Ridership Information");
+
+        //For more information
+        weekdaylevel = secondDisplay.append("text")
+            .attr("x", 30 )
+            .attr("y", 205)
+            .attr("id", "Heading")
+            .style("stroke-width", "1")
+            .style("font-family", "Arial")
+            .style("font-size", "12")
+            .style("fill",'#000000')
+            .text("Weekdays: " +  Routes[current_key].WeekdayLevel)
+            .style({opacity:'1.0'});
+
+        weekendlevel = secondDisplay.append("text")
+            .attr("x", 200 )
+            .attr("y", 205)
+            .attr("id", "Heading")
+            .style("stroke-width", "1")
+            .style("font-family", "Arial")
+            .style("font-size", "12")
+            .style("fill",'#000000')
+            .text("Weekends: " +  Routes[current_key].WeekendLevel)
+            .style({opacity:'1.0'});
+
+        //Info for the buttons
+        secondDisplay.append("text")
+            .attr("x", 30 )
+            .attr("y", 227)
+            .attr("id", "Heading")
+            .style("stroke-width", "1")
+            .style("font-family", "Arial")
+            .style("font-size", "12")
+            .style("fill",'#000000')
+            .text("More Information:")
+            .style({opacity:'1.0'});
+
+        //Add buttons
+        var weekdaybutton = secondDisplay.append("rect").attr({
+            x: 132,
+            y: 215,
+            width: 80,
+            height: 20,
+            "fill": "white",
+            "fill-opacity": 0.2,
+            "stroke-width": 1,
+            stroke: "black",
+            opacity: 0.3
+        }).on('mouseover',function(){
+            d3.select(this).attr("fill", "#377eb8")
+
+        }).on('mouseout',function(){
+                d3.select(this).attr("fill", "white")
+        }) .on('click',function(){
+            showBarDisplay("Weekday")
+        });
+
+        secondDisplay.append("text")
+            .attr("x", 142 )
+            .attr("y", 228)
+            .attr("id", "Heading")
+            .style("stroke-width", "1")
+            .style("font-family", "Arial")
+            .style("font-size", "12")
+            .style("fill",'#000000')
+            .text("Weekdays")
+            .style({opacity:'1.0'})
+            .on('mouseover',function(){
+                weekdaybutton.attr("fill", "#377eb8")
+            }).on('mouseout',function(){
+                weekdaybutton.attr("fill", "white")
+            }) .on('click',function(){
+                showBarDisplay("Weekday")
+            });
+
+        var weekendbutton = secondDisplay.append("rect").attr({
+            x: 220,
+            y: 215,
+            width: 80,
+            height: 20,
+            "fill": "white",
+            "fill-opacity": 0.2,
+            "stroke-width": 1,
+            stroke: "black",
+            opacity: 0.3
+        }).on('mouseover',function(){
+            d3.select(this).attr("fill", "#377eb8")
+        }).on('mouseout',function(){
+            d3.select(this).attr("fill", "white")
+        }) .on('click',function(){
+            showBarDisplay("Weekend")
+        });
+
+        secondDisplay.append("text")
+            .attr("x", 233)
+            .attr("y", 228)
+            .attr("id", "Heading")
+            .style("stroke-width", "1")
+            .style("font-family", "Arial")
+            .style("font-size", "12")
+            .style("fill",'#000000')
+            .text("Weekend")
+            .style({opacity:'1.0'})
+            .on('mouseover',function(){
+                weekendbutton.attr("fill", "#377eb8")
+            }).on('mouseout',function(){
+                weekendbutton.attr("fill", "white")
+            }) .on('click',function(){
+                showBarDisplay("Weekend")
+            });
+
+        // Adds a separator ------------- Speed
+        secondDisplay.append("line")
+            .style("stroke", "black")
+            .attr("x1", 50)
+            .attr("y1", 245)
+            .attr("x2", 300)
+            .attr("y2", 245);
+
+        secondDisplay.append("text")
+            .attr("x", 350/2 )
+            .attr("y", 270)
+            .attr("id", "Heading")
+            .style("stroke-width", "1")
+            .style("font-family", "Arial")
+            .style("font-size", "16")
+            .style("fill",'#000000')
+            .text("Route Flow")
+            .style({opacity:'1.0'})
+            .style("text-anchor", "middle");
+
+        d3.json("pathflow.json", function (data) {
+
+            var linechart = [];
+
+            timeg = secondDisplay.append("g").attr("id", "timeline");
+            timeg.attr("transform", "translate(" +  15 + "," + 275 +")");
+
+            timeChart = dc.compositeChart("#timeline");
+
+            data[displayKey].Routes.forEach(function (route) {
+                var xf  = crossfilter(data[displayKey][route]);
+                var dim = xf.dimension(function (d) {
+                    return d["distance"]; });
+                var group = dim.group().reduceSum(function (d) {
+                    return d["time"]; });
+
+                var append = dc.lineChart(timeChart)
+                    .dimension(dim)
+                    .colors(timeColors[route])
+                    .group(group, route);
+
+                linechart.push(append);
+            });
+
+            timeChart
+                .width(340)
+                .height(160)
+                .x(d3.scale.linear().domain([0,35]))
+                .y( d3.scale.linear().domain([0,130]))
+                .legend(dc.legend().x(70).y(10).itemHeight(13).gap(5))
+                .compose(linechart)
+                .brushOn(false)
+                .xAxisLabel("Distance (miles)")
+                .yAxisLabel("Time (mins)")
+                .render();
+
+        });
+
+        // Adds a separator ------------- Buttons for next viz
+        secondDisplay.append("line")
+            .style("stroke", "black")
+            .attr("x1", 50)
+            .attr("y1", 440)
+            .attr("x2", 300)
+            .attr("y2", 440);
+
+        var trafficdisplay = secondDisplay.append("rect").attr({
+            x: 50,
+            y: 450,
+            width: 120,
+            height: 20,
+            "fill": "white",
+            "fill-opacity": 0.2,
+            "stroke-width": 1,
+            stroke: "black",
+            opacity: 0.3
+        }).on('mouseover',function(){
+            d3.select(this).attr("fill", "#377eb8")
+
+        }).on('mouseout',function(){
+            d3.select(this).attr("fill", "white")
+        }) .on('click',function(){
+            displayTraffic();
+        });
+
+        secondDisplay.append("text")
+            .attr("x", 95 )
+            .attr("y", 463)
+            .attr("id", "Heading")
+            .style("stroke-width", "1")
+            .style("font-family", "Arial")
+            .style("font-size", "12")
+            .style("fill",'#000000')
+            .text("Traffic")
+            .style({opacity:'1.0'})
+            .on('mouseover',function(){
+                trafficdisplay.attr("fill", "#377eb8")
+            }).on('mouseout',function(){
+               trafficdisplay.attr("fill", "white")
+            }) .on('click',function(){
+                displayTraffic();
+            });
+
+
+        var scheduledisplay = secondDisplay.append("rect").attr({
+            x: 180,
+            y: 450,
+            width: 120,
+            height: 20,
+            "fill": "white",
+            "fill-opacity": 0.2,
+            "stroke-width": 1,
+            stroke: "black",
+            opacity: 0.3
+        }).on('mouseover',function(){
+            d3.select(this).attr("fill", "#377eb8")
+
+        }).on('mouseout',function(){
+            d3.select(this).attr("fill", "white")
+        }) .on('click',function(){
+            
+            displaySchedule(current_key);            
+        });
+
+        secondDisplay.append("text")
+            .attr("x", 212 )
+            .attr("y", 463)
+            .attr("id", "Heading")
+            .style("stroke-width", "1")
+            .style("font-family", "Arial")
+            .style("font-size", "12")
+            .style("fill",'#000000')
+            .text("Schedule")
+            .style({opacity:'1.0'})
+            .on('mouseover',function(){
+                scheduledisplay.attr("fill", "#377eb8")
+            }).on('mouseout',function(){
+                scheduledisplay.attr("fill", "white")
+            }) .on('click',function(){
+                displaySchedule(current_key);
+            });
+
+
+        // Bottom Part ---------------------------------------------------
+        secondDisplay.append("text")
+            .attr("class", "material-icons")
+            .attr("x", 20)
+            .attr("y", 520)
+            .style("font-size", "38")
+            .style("fill", "black")
+            .style("stroke", "white")
+            .text("place")
+            .style({opacity:'0.7'});
+
+        secondDisplay.append("text")
+            .attr("x", 70)
+            .attr("y", 509)
+            .style("font-size", "16")
+            .style("fill", "black")
+            .text("Current Bus location")
+            .style({opacity:'0.7'});
+
+        secondDisplay.append("text")
+            .attr("class", "material-icons")
+            .attr("x", 290)
+            .attr("y", 545)
+            .style("font-size", "30")
+            .style("fill", "black")
+            .style("stroke", "white")
+            .text("cancel")
+            .style({opacity:'0.7'})
+            .on('mouseover',function(){
+                d3.select(this).style({opacity:'1.0'})
+            })
+            .on('mouseout',function(){
+                d3.select(this).style({opacity:'0.7'})
+            })
+            .on('click',function(){
+                MoreInfo(current_key)
+            });
+
+        secondDisplay.append("text")
+            .attr("class", "material-icons")
+            .attr("x", 20)
+            .attr("y", 555)
+            .style("font-size", "36")
+            .style("fill", "black")
+            .style("stroke", "white")
+            .text("directions_bus")
+            .style({opacity:'0.7'});
+
+        secondDisplay.append("text")
+            .attr("x", 70)
+            .attr("y", 544)
+            .style("font-size", "16")
+            .style("fill", "black")
+            .text("Bus Stops")
+            .style({opacity:'0.7'});
+
+        map.on("move", update);
+        update(current_key);
+
+        function update(){
+            var bounds = map.getBounds();
+            var boundX = map.latLngToLayerPoint(bounds["_northEast"]).x - 360;
+            var boundY = map.latLngToLayerPoint(bounds["_northEast"]).y + 10;
+
+            g2.attr("transform", "translate(" +  boundX + "," + boundY +")");
+
+
+            //This is added for traffic
+            if(displayTrafficCurrent == true)
+            {
+                trafficMAP.setZoom(map.getZoom());
+                trafficMAP.setCenter(map.getCenter());
+            }
+
+        }
+    }
+
+    var displayTrafficCurrent = false;
+    var trafficMAP;
+    var overlay;
+    var day = "xDay";
+    var time = "0am";
+    var usrEvent = "xEvent";
+
+    function displayTraffic()
+    {
+        displayTrafficCurrent= true;
+
+        document.getElementById('trafficmap').style.display = 'inline-block';
+
+        $("#trafficmap").addClass("addTrafficMAPS");
+        $("#mapid").addClass("addTrafficMAPS");
+
+
+        trafficMAP = new google.maps.Map(document.getElementById('googleMap'), {
+            zoom: 12,
+            center: {lat: 33.38720402661663, lng: -111.91974395751953}
+        });
+        console.log(trafficMAP);
+
+        google.maps.event.trigger(trafficMAP, 'resize');
+        trafficMAP.setZoom(map.getZoom());
+        trafficMAP.setCenter(map.getCenter());
+        secondDisplay.style("display", "none");
+        map.invalidateSize();
+
+
+    }
+
+    function getOverlayBounds(bounds){
+
+        bounds.north = 33.452600;
+        bounds.south = 33.317055;
+        bounds.west = -111.985453;
+        bounds.east = -111.886700;
+    }
+
+    function selectDay(event) {
+
+        document.getElementById("days").style.display = "none";
+
+        console.log(event);
+
+        var imageBounds = {
+            north: 0,
+            south: 0,
+            west: 0,
+            east: 0
+        };
+        getOverlayBounds(imageBounds);
+
+        day = event.getAttribute("id");
+        if (time == "0am") {
+            time = "8am";
+            document.getElementById("timeButton").innerText = "8am";
+        }
+		if(usrEvent !="xEvent"){
+			usrEvent = "xEvent";
+			document.getElementById("eventButton").innerText = "Select Event";
+		}
+
+        var imageName = "traffic/" + day + time + ".png";
+
+        console.log(imageName);
+
+        overlay = new google.maps.GroundOverlay(
+            imageName,
+            imageBounds
+        );
+        overlay.setMap(trafficMAP);
+
+        document.getElementById("dayButton").innerText = event.innerHTML;
+    }
+
+    function selectTime(event) {
+        document.getElementById("times").style.display = "none";
+
+        var imageBounds = {
+            north: 0,
+            south: 0,
+            west: 0,
+            east: 0
+        };
+        getOverlayBounds(imageBounds);
+        time = event.getAttribute("id");
+        if(day == "xDay"){
+            day = "Mon";
+            document.getElementById("dayButton").innerText = "Monday";
+        }
+		if(usrEvent !="xEvent"){
+			usrEvent = "xEvent";
+			document.getElementById("eventButton").innerText = "Select Event";
+		}
+
+        var imageName = "traffic/" + day + time + ".png";
+
+        console.log(imageName);
+
+        overlay = new google.maps.GroundOverlay(
+            imageName,
+            imageBounds
+        );
+        overlay.setMap(trafficMAP);
+
+        document.getElementById("timeButton").innerText = event.innerHTML;
+    }
+
+    function selectEvent(event) {
+        document.getElementById("events").style.display = "none";
+		
+		usrEvent = event.getAttribute("id");
+		if(day != "xDay"){
+			day = "xDay";
+			time = "0am";
+			document.getElementById("dayButton").innerText = "Select Day";
+			document.getElementById("timeButton").innerText = "Select Time";
+		}
+		var imageBounds = {
+			north: 0,
+			south: 0,
+			west: 0, 
+			east: 0
+		};
+		getOverlayBounds(imageBounds);
+		
+		var imageName = "traffic/" + usrEvent + ".png";
+        console.log(imageName);
+		
+		overlay = new google.maps.GroundOverlay(
+			imageName,
+			imageBounds
+		 );
+		overlay.setMap(trafficMAP);
+		
+        document.getElementById("eventButton").innerText = event.innerHTML;
+    }
+
+
+    $("#CloseButton").click(function () {
+
+        document.getElementById('trafficmap').style.display = 'none';
+        $("#trafficmap").removeClass("addTrafficMAPS");
+        $("#mapid").removeClass("addTrafficMAPS");
+        secondDisplay.style("display", "inline-block");
+        map.invalidateSize();
+
+    });
+
+
+    function chooseDay() {
+        if(document.getElementById("days").style.display != "block"){
+            document.getElementById("days").style.display = "block";
+        }
+        else {
+            document.getElementById("days").style.display = "none";
+        }
+    }
+
+    function chooseTime() {
+        if(document.getElementById("times").style.display != "block"){
+            document.getElementById("times").style.display = "block";
+        }
+        else {
+            document.getElementById("times").style.display = "none";
+        }
+    }
+
+    function chooseEvent() {
+        if(document.getElementById("events").style.display != "block"){
+            document.getElementById("events").style.display = "block";
+        }
+        else {
+            document.getElementById("events").style.display = "none";
+        }
+    }
+
+    var displayScheduleCurrent = false;
+    function displaySchedule(current_key)
+    {
+        if (displayScheduleCurrent == true){
+            $("#otherview").empty();
+        }
+
+        displayScheduleCurrent = true;
+        var formatTime = d3.time.format("%I:%M%p");
+
+
+        //Call Schedule Functions
+        $("#otherview").addClass("displaySchedule");
+        $("#mapid").addClass("updateMAP");
+        map.invalidateSize();
+
+        secondDisplay.style("display", "none");
+
+        var stations = [];
+
+        var margin = {top: 100, right: 50, bottom: 100, left: 200},
+        width = 800 - margin.left - margin.right,
+        height = 600 - margin.top - margin.bottom;
+        
+        var x = d3.time.scale()
+        .domain([parseTime("3:00AM"), parseTime("2:59AM")])
+        .range([0, width]);
+        
+        var y = d3.scale.linear()
+        .range([0, height]);
+        
+        var xAxis = d3.svg.axis()
+        .scale(x)
+        .ticks(8)
+        .tickFormat(formatTime);
+        
+        var line = d3.svg.line()
+        .x(function(d) { return x(d.time); })
+        .y(function(d) { return y(d.station.distance); });
+        
+        var scheduleMAINSVG= d3.select("#otherview").append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom);
+        
+        var scheduleSVG = scheduleMAINSVG.append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+        
+        scheduleMAINSVG.append("text")
+            .attr("x", 800/2 )
+            .attr("y", 45)
+            .attr("id", "Heading")
+            .attr("stroke-width", "1")
+            .attr("font-family", "Arial")
+            .attr("font-size", "38")
+            .attr("fill",'#000000')
+            .attr("text-anchor", "middle")
+            .text(current_key + " Marey Diagram");
+        
+        scheduleSVG.append("defs").append("clipPath")
+        .attr("id", "clip")
+        .append("rect")
+        .attr("y", -margin.top)
+        .attr("width", width)
+        .attr("height", height + margin.top + margin.bottom);
+
+        scheduleMAINSVG.append("rect").attr({
+            x: 200,
+            y: 550,
+            width: 400,
+            height: 20,
+            "fill": "white",
+            "fill-opacity": 0.2,
+            "stroke-width": 1,
+            stroke: "black",
+            opacity: 0.3
+        });
+
+       scheduleMAINSVG.append("rect").attr({
+            x: 220,
+            y: 550,
+            width: 20,
+            height: 20,
+            "fill": "red",
+            "fill-opacity": 1.0,
+            "stroke-width": 1,
+            stroke: "black",
+            opacity: 0.7
+        });
+
+       scheduleMAINSVG.append("text")
+            .attr("x",300 )
+            .attr("y", 565)
+            .attr("id", "Heading")
+            .attr("stroke-width", "1")
+            .attr("font-family", "Arial")
+            .attr("font-size", "10")
+            .attr("fill",'#000000')
+            .attr("text-anchor", "middle")
+            .text("EastBound/Northbound");
+
+       scheduleMAINSVG.append("rect").attr({
+            x: 410,
+            y: 550,
+            width: 20,
+            height: 20,
+            "fill": "black",
+            "fill-opacity": 1.0,
+            "stroke-width": 1,
+            stroke: "black",
+            opacity: 0.7
+        });
+
+       scheduleMAINSVG.append("text")
+            .attr("x",500 )
+            .attr("y", 565)
+            .attr("id", "Heading")
+            .attr("stroke-width", "1")
+            .attr("font-family", "Arial")
+            .attr("font-size", "10")
+            .attr("fill",'#000000')
+            .attr("text-anchor", "middle")
+            .text("WestBound/Southbound");
+
+
+        var name = "schedule-" + current_key + ".tsv";
+        var scheduleFileName = "schedule/" + name.replace("/", "-");
+
+        d3.tsv(scheduleFileName, type, function(error, buses) {
+          y.domain(d3.extent(stations, function(d) { return d.distance; }));
+
+          var station = scheduleSVG.append("g")
+              .attr("class", "station")
+            .selectAll("g")
+              .data(stations)
+            .enter().append("g")
+              .attr("transform", function(d) { return "translate(0," + y(d.distance) + ")"; });
+
+          station.append("text")
+              .attr("x", -6)
+              .attr("dy", ".35em")
+              .text(function(d) { return d.name; });
+
+          station.append("line")
+              .attr("x2", width);
+
+          scheduleSVG.append("g")
+              .attr("class", "x top axis")
+              .call(xAxis.orient("top"));
+
+          scheduleSVG.append("g")
+              .attr("class", "x bottom axis")
+              .attr("transform", "translate(0," + height + ")")
+              .call(xAxis.orient("bottom"));
+
+          var bus = scheduleSVG.append("g")
+              .attr("class", "bus")
+              .attr("clip-path", "url(#clip)")
+            .selectAll("g")
+              .data(buses.filter(function(d) { return /[NLB]/.test(d.type); }))
+            .enter().append("g")
+              .attr("class", function(d) { return d.type; });
+
+          bus.append("path")
+              .attr("d", function(d) { return line(d.stops); });
+
+          bus.selectAll("circle")
+              .data(function(d) { return d.stops; })
+            .enter().append("circle")
+              .attr("transform", function(d) { return "translate(" + x(d.time) + "," + y(d.station.distance) + ")"; })
+              .attr("r", 2);
+        });
+
+        function type(d, i) {
+
+          // Extract the stations from the "stop|*" columns.
+          if (!i) for (var k in d) {
+            if (/^stop\|/.test(k)) {
+              var p = k.split("|");
+              stations.push({
+                key: k,
+                name: p[1],
+                distance: +p[2],
+                zone: +p[3]
+              });
+            }
+          }
+
+          return {
+            number: d.number,
+            type: d.type,
+            direction: d.direction,
+            stops: stations
+                .map(function(s) { return {station: s, time: parseTime(d[s.key])}; })
+                .filter(function(s) { return s.time != null; })
+          };
+        }
+
+        function parseTime(s) {
+          var t = formatTime.parse(s);
+          if (t != null && t.getHours() < 3) t.setDate(t.getDate() + 1);
+          return t;
+        }
+        
+        
+        scheduleSVG.append("text")
+            .attr("class", "material-icons")
+            .attr("x", 550)
+            .attr("y", 475)
+            .style("font-size", "30")
+            .style("fill", "black")
+            .style("stroke", "white")
+            .text("cancel")
+            .style({opacity:'0.7'})
+            .on('mouseover',function(){
+                d3.select(this).style({opacity:'1.0'})
+            })
+            .on('mouseout',function(){
+                d3.select(this).style({opacity:'0.7'})
+            })
+            .on('click',function(){
+                displayScheduleCurrent = false;
+                $("#otherview").empty();
+                $("#otherview").removeClass("displaySchedule");
+                $("#mapid").removeClass("updateMAP");
+                secondDisplay.style("display", "inline-block");
+                map.invalidateSize();
+            });
+
+    }
+    
+    function updateSecondMain(current_key) {
+        //Update the Heading
+        heading.text(current_key);
+
+        // Update Levels
+        weekendlevel.text("Weekends: " +  Routes[current_key].WeekendLevel);
+        weekdaylevel.text("Weekends: " +  Routes[current_key].WeekdayLevel);
+
+        //Update the chart
+        var data = [{"Day": "Weekday", "Value": Routes[current_key].Weekday},
+            {"Day": "Weekend", "Value": Routes[current_key].Weekend}];
+
+        passengersg = secondDisplay.append("g").attr("id", "passfullbar");
+        passengersg.attr("transform", "translate(" +  10 + "," + 100 +")");
+        passengersChart = dc.rowChart("#passfullbar");
+
+        xf_chart  = crossfilter(data);
+        dim_chart = xf_chart.dimension(function (d) {
+            return d["Day"]; });
+        group_chart = dim_chart.group().reduceSum(function (d) {
+            return d["Value"]; });
+
+        passengersChart
+            .width(330)
+            .height(80)
+            .margins({top: 10, left: 10, right: 10, bottom: 20})
+            .ordering(function(d) { return -d.value; })
+            .dimension(dim_chart)
+            .group(group_chart)
+            .elasticX(false)
+            .colors(d3.scale.ordinal().domain(["Weekday", "Weekend"])
+                .range(["#377eb8", "#4daf4a"]))
+            .x(d3.scale.linear().domain([0,4800]).range([0, 310]))
+            .xAxis().ticks(5);
+
+        passengersChart.render();
+
+        d3.json("pathflow.json", function (data) {
+
+            var linechart = [];
+
+            timeg = secondDisplay.append("g").attr("id", "timeline");
+            timeg.attr("transform", "translate(" +  15 + "," + 275 +")");
+
+            timeChart = dc.compositeChart("#timeline");
+
+            data[current_key].Routes.forEach(function (route) {
+                var xf  = crossfilter(data[displayKey][route]);
+                var dim = xf.dimension(function (d) {
+                    return d["distance"]; });
+                var group = dim.group().reduceSum(function (d) {
+                    return d["time"]; });
+
+                var append = dc.lineChart(timeChart)
+                    .dimension(dim)
+                    .colors(timeColors[route])
+                    .group(group, route);
+
+                linechart.push(append);
+            });
+
+            timeChart
+                .width(340)
+                .height(160)
+                .x(d3.scale.linear().domain([0,35]))
+                .y( d3.scale.linear().domain([0,130]))
+                .legend(dc.legend().x(70).y(10).itemHeight(13).gap(5))
+                .compose(linechart)
+                .brushOn(false)
+                .xAxisLabel("Distance (miles)")
+                .yAxisLabel("Time (mins)")
+                .render();
+
+        });
+
+        if(displayScheduleCurrent == true)
+        {
+            $("#otherview").empty();
+            displaySchedule(current_key);
+            map.invalidateSize();
+        }
+    }
+
+    //Add the basic info chart about the
+    var g3 = svg.append("g").attr("class", "bar-dis");
+    var BarDisplay;
+
+    function showBarDisplay(day)
+    {
+        if (BarDisplay == null) {
+            BarDisplay = g3.append("svg")
+            .attr("id", "bar-display")
+            .attr("width",  600)
+            .attr("height", 285);
+        }
+        else
+        {
+            BarDisplay.remove(); 
+            BarDisplay = g3.append("svg")
+            .attr("id", "bar-display")
+            .attr("width",  600)
+            .attr("height", 285);
+        }
+
+        BarDisplay.append("rect").attr({
+            x: 0,
+            y: 0,
+            width: 600,
+            height: 285,
+            "fill": "white",
+            "fill-opacity": 0.7,
+            "stroke-width": 1,
+            stroke: "black"
+        });
+
+        BarDisplay.append("text")
+            .attr("x", 600/2 )
+            .attr("y", 25)
+            .attr("id", "Heading")
+            .style("stroke-width", "1")
+            .style("font-family", "Arial")
+            .style("font-size", "16")
+            .style("fill",'#000000')
+            .text(day + " Ridership")
+            .style({opacity:'1.0'}).style("text-anchor", "middle");
+
+        BarDisplay.append("text")
+            .attr("class", "material-icons")
+            .attr("x", 560)
+            .attr("y", 30)
+            .style("font-size", "20")
+            .style("fill", "black")
+            .style("stroke", "white")
+            .text("cancel")
+            .style({opacity:'0.7'})
+            .on('mouseover',function(){
+                d3.select(this).style({opacity:'1.0'})
+            })
+            .on('mouseout',function(){
+                d3.select(this).style({opacity:'0.7'})
+            })
+            .on('click',function(){
+                BarDisplay.remove()
+            });
+
+        AddBarChart(day);
+
+        map.on("move", update);
+        update();
+
+        function update(){
+            var bounds = map.getBounds();
+            var boundX = map.latLngToLayerPoint(bounds["_northEast"]).x - (360 + 610);
+            var boundY = map.latLngToLayerPoint(bounds["_northEast"]).y + 10;
+
+            g3.attr("transform", "translate(" +  boundX + "," + boundY +")");
+
+        }
+    }
+
+    //Update the chart
+    var gbar;
+    var rowChart;
+
+    function AddBarChart(day)
+    {
+        gbar = BarDisplay.append("g").attr("id", "fullbar");
+        gbar.attr("transform", "translate(" +  10 + "," + 40 +")");
+
+        rowChart = dc.rowChart("#fullbar");
+        var data = [];
+        Object.keys(Routes).forEach(function (d) {
+                data.push(Routes[d]);
+            }
+        );
+
+        var xf  = crossfilter(data);
+        var dim = xf.dimension(function (d) {
+            return d["Route"]; });
+        var group = dim.group().reduceSum(function (d) {
+            return d[day]; });
+
+        rowChart
+            .width(580)
+            .height(230)
+            .margins({top: 0, left: 10, right: 10, bottom: 30})
+            .ordering(function(d) { return -d.value; })
+            .dimension(dim)
+            .group(group)
+            .colors(function (d) {
+                return colors[d];
+            });
+
+        rowChart.render();
+
+        BarDisplay.append("text")
+        .attr("x", rowChart.width() / 2)
+        .attr("y", rowChart.height()+40)
+        .text("# of people");
+
+    }
+
+    // Add Click
+    // Things for the bus stops for hover
+    var infoDisplay =  svg.append("g")
+        .attr("class", "g3")
+        .style("opacity", .0);
+
+    var Info = infoDisplay.append("svg")
+        .attr("class", "second-display")
+        .attr("width",  100)
+        .attr("height", 20);
+
+    var rectInfo  = Info.append("rect").attr({
+        x: 0,
+        y: 0,
+        width: 100,
+        height: 18,
+        "fill": "white",
+        "fill-opacity": 0.7,
+        "stroke-width": 1,
+        stroke: "black"
+    });
+
+    var TextInfo = Info.append("text")
+        .attr("x", 100/2 )
+        .attr("y", 15)
+        .attr("id", "Heading")
+        .style("stroke-width", "1")
+        .style("font-family", "Arial")
+        .style("font-size", "12")
+        .style("fill",'#000000')
+        .style("text-anchor", "middle")
+        .text("test");
+
+    // Bus Stops
+    var busStops = [];
+
+    var routesList = {"Southern": [17466, 13057, 13930, 13940, 13559, 13964, 13969, 13978, 13987, 14000, 14011, 12581],
+        "University": [12031, 12040, 12051, 12059, 12067, 12078, 12088, 12101, 12114, 17082, 17103, 12071],
+        "Broadway": [13063, 10481, 13075, 13080, 13089, 13094, 17090, 13111, 12078, 13132, 13139, 13150, 12576, 12581, 16931],
+        "48th Street/Rio Salado": [13261, 13089, 13277, 14163, 13292, 13280, 14163],
+        "Hardy/Guadalupe": [14126, 14131, 14137, 14144, 14157, 14163],
+        "Priest Drive" : [17170, 18433, 13604, 13305, 13615, 13625, 10242, 10245, 18407, 11385],
+        "Mill/Kyrene 6": [14274, 14286, 14221, 14226, 14237, 12506],
+        "Mill/Kyrene 5": [14205, 14209, 14221, 14226, 14237, 12506],
+        "Hayden/McClintock": [14649, 15063, 18100, 15140, 15075, 15085, 15090,15101 , 15107, 15121, 15139, 14163],
+        "Scottsdale Rd/Rural": [14649, 14656, 14660, 14669, 14682, 12506, 14703, 14721, 14729, 14738, 18534, 14751, 14756, 13391]
+    };
+    function displayBusStops(current_key) {
+
+        var url = "https://services2.arcgis.com/2t1927381mhTgWNC/arcgis/rest/services/ValleyMetroBusStops/FeatureServer/0/query?where=";
+        var output = "&outFields=OBJECTID,Photo,Direction,Lat,Routes,NextRide,Description,Long&outSR=4326&f=json";
+        var query = "UPPER(Routes)%20like%20%27%25"+ routeNumbers[current_key] +"%25%27";
+
+        var filename = url+query+output;
+
+        $.ajax({
+            type: 'GET',
+            url: filename,
+            async: false,
+            dataType: 'json',
+            success: function (data) {
+
+                console.log(data);
+                data.features.forEach(function(d) {
+
+                    var cord = new L.LatLng(d.attributes.Lat ,d.attributes.Long);
+                    var stop = g.append("text")
+                        .attr("class", "material-icons")
+                        .attr("x", map.latLngToLayerPoint(cord).x)
+                        .attr("y", map.latLngToLayerPoint(cord).y)
+                        .attr("id", d.attributes.NextRide)
+                        .style("fill", "black")
+                        .style("stroke", colors[current_key])
+                        .text("directions_bus")
+                        .style({opacity:'0.7'})
+                        .style("font-size", "12")
+                        .on('mouseover',function(){
+                            var setlength = d.attributes.Description.length * 8;
+                            d3.select(this).style({opacity:'1.0'});
+
+                            infoDisplay.style("opacity", .9);
+                            infoDisplay.attr("transform", "translate(" + (map.latLngToLayerPoint(cord).x -setlength/2 ) + "," + (map.latLngToLayerPoint(cord).y  + 10)+")");
+                            Info.attr("width", setlength);
+                            TextInfo.text(d.attributes.Description).attr("x", setlength/2 );
+                            rectInfo.attr("width", setlength)
+                        })
+                        .on('mouseout',function(){
+                            d3.select(this).style({opacity:'0.7'});
+                            infoDisplay.style("opacity", .0);
+                        });
+
+                    busStops.push([stop,cord, d.attributes.Description]);
+
+                });
+
+                map.on("zoom", updateBusStop);
+                updateBusStop();
+
+                function updateBusStop(){
+                    busStops.forEach(function(data) {
+                        data[0].attr("x", map.latLngToLayerPoint(data[1]).x)
+                            .attr("y", map.latLngToLayerPoint(data[1]).y);
+
+                        if(map.getZoom() > 14)
+                        {
+                            data[0].style("font-size", "15")
+                        }
+                        else
+                        {
+                            if(in_array(routesList[current_key],data[0].attr("id")))
+                            {
+                                data[0].style("font-size", "15")
+                            }
+                            else
+                            {
+                                data[0].style("font-size", "0")
+                            }
+                        }
+
+                    });
+
+                }
+
+                function in_array(array, id) {
+                    for(var i=0 ; i <array.length  ;i++) {
+                        if(array[i]== id)
+                        {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+            }
+        });
+
+    }
+
+
+    var intervalId;
+    function updateCurrentBus(current_key)
+    {
+        intervalId = window.setInterval(function (){
+            displayCurrentBus(current_key) }, 15000);
+    }
+
+    //Data for displayCurrentBus
+    var currestBuses = [];
+
+    function displayCurrentBus(current_key){
+        console.log(current_key);
+        //Reomve the current stops
+        currestBuses.forEach(function (data) {
+                data[0].remove();
+            });
+        currestBuses = [];
+        
+        var selectedRoute = routeNumbers[current_key];
+        var filename = "https://transitdata.phoenix.gov/api/vehiclepositions?format=json";
+
+        $.ajax({
+            type: 'GET',
+            url: filename,
+            async: false,
+            dataType: 'json',
+            success: function (data) {
+
+                data.entity.forEach(function(d) {
+                    if (d.vehicle.trip.route_id == selectedRoute)
+                    {
+                        var cord = new L.LatLng(d.vehicle.position.latitude ,d.vehicle.position.longitude);
+
+                        var stop = g.append("text")
+                            .attr("class", "material-icons")
+                            .attr("x", map.latLngToLayerPoint(cord).x)
+                            .attr("y", map.latLngToLayerPoint(cord).y)
+                            .style("fill", "black")
+                            .style("stroke", "white")
+                            .attr("width", 50)
+                            .attr("height", 50)
+                            .text("place")
+                            .attr("text-anchor", "middle")
+                            .style({opacity:'0.7'})
+                            .on('mouseover',function(){
+                                d3.select(this).style({opacity:'1.0'});
+                            })
+                            .on('mouseout',function(){
+                                d3.select(this).style({opacity:'0.7'});
+                            });
+
+                        currestBuses.push([stop,cord]);
+                    }
+
+                    map.on("zoom", updateCurrentBus);
+                    updateCurrentBus();
+
+                    function updateCurrentBus(){
+                        currestBuses.forEach(function(data) {
+                            data[0].attr("x", map.latLngToLayerPoint(data[1]).x)
+                                .attr("y", map.latLngToLayerPoint(data[1]).y);
+                        });
+                    }
+
+                });
+            }
+        })
+    }
+
+
+</script>
+</body>
+</html>
